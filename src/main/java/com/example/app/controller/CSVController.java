@@ -2,6 +2,7 @@ package com.example.app.controller;
 
 import java.util.List;
 
+import com.example.app.service.DocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import com.example.app.helper.CSVHelper;
 import com.example.app.message.ResponseMessage;
 import com.example.app.model.Tutorial;
 import com.example.app.service.CSVService;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @CrossOrigin("*")
 @Controller
@@ -29,6 +32,9 @@ public class CSVController {
 
 	@Autowired
 	CSVService fileService;
+
+	@Autowired
+	DocumentService documentService;
 	
 	@PostMapping("/upload")
 	public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file") MultipartFile file) {
@@ -48,6 +54,29 @@ public class CSVController {
 		
 		message = "Please upload a csv file!";
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(message));
+	}
+
+	@PostMapping("/saveFile")
+	public String uploadFileTwo(@RequestParam("file") MultipartFile file, ModelMap map) {
+		String message = "";
+		String documentId = "";
+
+		if (file.isEmpty()){
+			message = "Kd o arquivo?";
+		} else {
+			documentId = documentService.saveUploadFile(file);
+			message = "Upload the file successfully: " + file.getOriginalFilename();
+		}
+
+		String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+				.path("/downloadFile/")
+				.path(documentId)
+				.toUriString();
+
+		map.put("message", message);
+		map.put("downloadUrl", fileDownloadUri);
+		return "success";
+
 	}
 	
 	@GetMapping("/tutorials")
